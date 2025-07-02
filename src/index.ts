@@ -11,7 +11,7 @@ import { version } from "../package.json";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import logger from "./utils/logger.js";
 
-import { createSalesforceConnection } from "./utils/connection.js";
+import { getConnection } from "./utils/connectionPool.js";
 import { SEARCH_OBJECTS, handleSearchObjects } from "./tools/search.js";
 import { DESCRIBE_OBJECT, handleDescribeObject } from "./tools/describe.js";
 import { QUERY_RECORDS, handleQueryRecords, QueryArgs } from "./tools/query.js";
@@ -33,7 +33,7 @@ dotenv.config();
 const server = new Server(
   {
     name: "salesforce-mcp-server",
-    version: "1.0.0",
+    version,
   },
   {
     capabilities: {
@@ -68,7 +68,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
     if (!args) throw new Error('Arguments are required');
 
-    const conn = await createSalesforceConnection();
+  const conn = await getConnection();
 
     switch (name) {
       case "salesforce_search_objects": {

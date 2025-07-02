@@ -1,9 +1,11 @@
+import https from 'https';
 import jsforce from 'jsforce';
 import { ConnectionType, ConnectionConfig } from '../types/connection.js';
-import https from 'https';
 import querystring from 'querystring';
 import logger from './logger.js';
 
+// Enable HTTP keep-alive for better performance on repeated calls
+https.globalAgent = new https.Agent({ keepAlive: true });
 /**
  * Creates a Salesforce connection using either username/password or OAuth 2.0 Client Credentials Flow
  * @param config Optional connection configuration

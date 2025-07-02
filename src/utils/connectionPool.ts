@@ -7,7 +7,12 @@ let singletonConn: any = null;
  */
 export async function getConnection() {
   if (!singletonConn) {
-    singletonConn = await createSalesforceConnection();
+    try {
+      singletonConn = await createSalesforceConnection();
+    } catch (error) {
+      singletonConn = null;
+      throw error;
+    }
   }
   return singletonConn;
 }

@@ -7,6 +7,9 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import * as dotenv from "dotenv";
+import { version } from "../package.json";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import logger from "./utils/logger.js";
 
 import { createSalesforceConnection } from "./utils/connection.js";
 import { SEARCH_OBJECTS, handleSearchObjects } from "./tools/search.js";
@@ -338,10 +341,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function runServer() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("Salesforce MCP Server running on stdio");
+  logger.info("Salesforce MCP Server running on stdio");
 }
 
 runServer().catch((error) => {
-  console.error("Fatal error running server:", error);
+  logger.error(error, "Fatal error running server");
   process.exit(1);
 });

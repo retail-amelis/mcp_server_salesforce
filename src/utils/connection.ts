@@ -2,6 +2,7 @@ import jsforce from 'jsforce';
 import { ConnectionType, ConnectionConfig } from '../types/connection.js';
 import https from 'https';
 import querystring from 'querystring';
+import logger from './logger.js';
 
 /**
  * Creates a Salesforce connection using either username/password or OAuth 2.0 Client Credentials Flow
@@ -20,6 +21,7 @@ export async function createSalesforceConnection(config?: ConnectionConfig) {
     'https://login.salesforce.com';
   
   try {
+    let conn: any;
     if (connectionType === ConnectionType.OAuth_2_0_Client_Credentials) {
       // OAuth 2.0 Client Credentials Flow
       const clientId = process.env.SALESFORCE_CLIENT_ID;
@@ -29,7 +31,7 @@ export async function createSalesforceConnection(config?: ConnectionConfig) {
         throw new Error('SALESFORCE_CLIENT_ID and SALESFORCE_CLIENT_SECRET are required for OAuth 2.0 Client Credentials Flow');
       }
       
-      console.error('Connecting to Salesforce using OAuth 2.0 Client Credentials Flow');
+      logger.info('Connecting to Salesforce using OAuth 2.0 Client Credentials Flow');
       
       // Get the instance URL from environment variable or config
       const instanceUrl = loginUrl;
@@ -82,12 +84,10 @@ export async function createSalesforceConnection(config?: ConnectionConfig) {
       });
       
       // Create connection with the access token
-      const conn = new jsforce.Connection({
+      conn = new jsforce.Connection({
         instanceUrl: tokenResponse.instance_url,
-        accessToken: tokenResponse.access_token
+        accessToken: tokenResponse.access_token,
       });
-      
-      return conn;
     } else {
       // Default: Username/Password Flow with Security Token
       const username = process.env.SALESFORCE_USERNAME;
@@ -98,20 +98,37 @@ export async function createSalesforceConnection(config?: ConnectionConfig) {
         throw new Error('SALESFORCE_USERNAME and SALESFORCE_PASSWORD are required for Username/Password authentication');
       }
       
-      console.error('Connecting to Salesforce using Username/Password authentication');
+      logger.info('Connecting to Salesforce using Username/Password authentication');
       
       // Create connection with login URL
-      const conn = new jsforce.Connection({ loginUrl });
-      
-      await conn.login(
-        username,
-        password + (token || '')
-      );
-      
-      return conn;
+      conn = new jsforce.Connection({ loginUrl });
+
+      await conn.login(username, password + (token || ''));
     }
+
+    // Cache describeGlobal and describe calls to reduce API usage and latency
+    let globalDescribeCache: unknown;
+    const describeCache = new Map<string, unknown>();
+    const origDescribeGlobal = conn.describeGlobal.bind(conn);
+    conn.describeGlobal = async () => {
+      if (globalDescribeCache === undefined) {
+        globalDescribeCache = await origDescribeGlobal();
+      }
+      return globalDescribeCache;
+    };
+    const origDescribe = conn.describe.bind(conn);
+    conn.describe = async (objectName: string) => {
+      if (!describeCache.has(objectName)) {
+        const result = await origDescribe(objectName);
+        describeCache.set(objectName, result);
+      }
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      return describeCache.get(objectName)!;
+    };
+
+    return conn;
   } catch (error) {
-    console.error('Error connecting to Salesforce:', error);
+    logger.error(error, 'Error connecting to Salesforce');
     throw error;
   }
 }

@@ -334,6 +334,24 @@ Examples with Field Level Security:
 "Configure log level to DEBUG for a user"
 ```
 
+## Development
+
+### Building from source
+
+```bash
+# Clone the repository
+git clone https://github.com/retail-amelis/mcp_server_salesforce.git
+
+# Navigate to directory
+cd mcp-server-salesforce
+
+# Install dependencies
+npm install
+
+# Build the project
+npm run build
+```
+
 ## Contributing
 
 Contributions are welcome! Feel free to submit a Pull Request.
@@ -341,3 +359,7 @@ Contributions are welcome! Feel free to submit a Pull Request.
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Issues and Support
+
+If you encounter any issues or need support, please file an issue on the [GitHub repository](https://github.com/retail-amelis/mcp_server_salesforce/issues).
